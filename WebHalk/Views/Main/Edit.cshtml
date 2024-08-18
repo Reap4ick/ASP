@@ -1,0 +1,71 @@
+﻿@model WebHalk.Models.Categories.CategoryEditViewModel
+
+<div class="container">
+    <h2>Редагувати категорію</h2>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="form-group">
+            <label for="Name">Назва</label>
+            <input type="text" class="form-control" id="Name" name="Name" asp-for="Name" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Вибір способу завантаження зображення</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="ImageSource" id="urlOption" value="url" checked>
+                <label class="form-check-label" for="urlOption">
+                    Завантажити зображення через URL
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="ImageSource" id="fileOption" value="file">
+                <label class="form-check-label" for="fileOption">
+                    Завантажити зображення з ПК
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="imageUrlGroup">
+            <label for="ImageUrl">Зображення (URL)</label>
+            <input type="text" class="form-control" id="ImageUrl" name="ImageUrl" asp-for="ImageUrl" />
+            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+        </div>
+
+        <div class="form-group d-none" id="imageFileGroup">
+            <label for="ImageFile">Зображення (Файл)</label>
+            <input type="file" class="form-control" id="ImageFile" name="ImageFile" asp-for="ImageFile" />
+            <span asp-validation-for="ImageFile" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Зберегти</button>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlOption = document.getElementById('urlOption');
+            const fileOption = document.getElementById('fileOption');
+            const imageUrlGroup = document.getElementById('imageUrlGroup');
+            const imageFileGroup = document.getElementById('imageFileGroup');
+
+            urlOption.addEventListener('change', function () {
+                if (urlOption.checked) {
+                    imageUrlGroup.classList.remove('d-none');
+                    imageFileGroup.classList.add('d-none');
+                }
+            });
+
+            fileOption.addEventListener('change', function () {
+                if (fileOption.checked) {
+                    imageFileGroup.classList.remove('d-none');
+                    imageUrlGroup.classList.add('d-none');
+                }
+            });
+        });
+    </script>
+}

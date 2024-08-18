@@ -1,0 +1,29 @@
+﻿@model WebHalk.Data.Entities.CategoryEntity
+
+<div class="container">
+    <h1 class="text-center">@Model.Name</h1>
+
+    <div class="row">
+        @if (Model.Products != null && Model.Products.Any())
+        {
+            @foreach (var product in Model.Products)
+            {
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        @if (product.ProductPhotos.Any())
+                        {
+                            <img src="@product.ProductPhotos.First().ImageUrl" class="card-img-top" alt="@product.Name" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@product.Name</h5>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p>No products available for this category.</p>
+        }
+    </div>
+</div>

@@ -1,0 +1,61 @@
+﻿@model IList<WebHalk.Models.Categories.CategoryItemViewModel>
+@{
+    Layout = "_MainLayout";
+}
+
+<div class="container">
+    <h1 class="text-center">Тактичне спорядження</h1>
+
+    <div class="text-right mb-3">
+        <a class="btn btn-primary" href="@Url.Action("Create", "Main")">Додати нову категорію</a>
+    </div>
+
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-xl-3 col-lg-4 col-sm-6 mb-4">
+                <div class="card" style="width: 100%;">
+                    <img src="@item.Image" class="card-img-top img-fluid" alt="@item.Name">
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Name</h5>
+                        <div class="d-flex justify-content-start mt-3">
+
+                            <a href="@Url.Action("Edit", "Main", new { id = item.Id })" class="btn btn-warning me-2">
+                                <img src="https://cdn-icons-png.flaticon.com/512/1159/1159633.png" style="width: 20px; height: 20px;">
+                            </a>
+
+                            <button type="button" class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Id">
+                                <img src="https://cdn-icons-png.flaticon.com/512/1483/1483063.png" alt="Image 2" style="width: 20px; height: 20px;">
+                            </button>
+
+                            <a href="@Url.Action("CategoryProducts", "Main", new { id = item.Id })" class="btn btn-primary">
+                                View Category
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="deleteModal-@item.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@item.Id" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="deleteModalLabel-@item.Id">Delete Category</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Ви впевнені що хочете видалити категорію?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <form asp-action="Delete" asp-controller="Main" method="post">
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
