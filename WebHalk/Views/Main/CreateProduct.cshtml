@@ -1,0 +1,33 @@
+﻿@model WebHalk.Models.ProductCreateViewModel
+
+<div class="container">
+    <h2>Додати новий продукт</h2>
+
+    <form asp-action="CreateProduct" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="Name">Назва продукту</label>
+            <input type="text" class="form-control" id="Name" name="Name" asp-for="Name" autocomplete="off" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Вибір способу завантаження зображення</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="ImageSource" id="fileOption" value="file" checked>
+                <label class="form-check-label" for="fileOption">
+                    Завантажити зображення з ПК
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="imageFileGroup">
+            <label for="ImageFiles">Зображення (Файли)</label>
+            <input type="file" class="form-control" id="ImageFiles" name="ImageFiles" asp-for="ImageFiles" multiple />
+            <span asp-validation-for="ImageFiles" class="text-danger"></span>
+        </div>
+
+        <input type="hidden" asp-for="CategoryId" value="@Model.CategoryId" />
+
+        <button type="submit" class="btn btn-primary">Додати продукт</button>
+    </form>
+</div>

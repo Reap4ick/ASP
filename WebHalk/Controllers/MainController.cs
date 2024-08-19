@@ -1,29 +1,35 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WebHalk.Data;
 using WebHalk.Data.Entities;
-using WebHalk.Models.Categories;
-using Microsoft.AspNetCore.Hosting;
+using WebHalk.Models;
+using System.Collections.Generic;
 using System.IO;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using WebHalk.Models.Categories;
+using WebHalk.Models.Products;
 
 namespace WebHalk.Controllers
 {
     public class MainController : Controller
     {
-        private readonly HulkDbContext _hulkDbContext;
+        private readonly HulkDbContext _context;
+        private readonly ILogger<MainController> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public MainController(HulkDbContext hulkDbContext, IWebHostEnvironment env)
+        public MainController(HulkDbContext context, ILogger<MainController> logger, IWebHostEnvironment env)
         {
-            _hulkDbContext = hulkDbContext;
+            _context = context;
+            _logger = logger;
             _env = env;
         }
 
         public IActionResult Index()
         {
-            var list = _hulkDbContext.Categories
+            var list = _context.Categories
                 .Select(x => new CategoryItemViewModel
                 {
                     Id = x.Id,
@@ -71,8 +77,8 @@ namespace WebHalk.Controllers
                 Image = imageUrl,
                 Name = model.Name,
             };
-            _hulkDbContext.Categories.Add(entity);
-            _hulkDbContext.SaveChanges();
+            _context.Categories.Add(entity);
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -80,7 +86,7 @@ namespace WebHalk.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var entity = _hulkDbContext.Categories.Find(id);
+            var entity = _context.Categories.Find(id);
             if (entity == null)
             {
                 return NotFound();
@@ -102,13 +108,12 @@ namespace WebHalk.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var entity = _hulkDbContext.Categories.Find(model.Id);
+            var entity = _context.Categories.Find(model.Id);
             if (entity == null)
             {
                 return NotFound();
             }
 
-            // Видаляємо старе зображення, якщо завантажено нове
             if (model.ImageFile != null && model.ImageFile.Length > 0)
             {
                 var currentImagePath = Path.Combine(_env.WebRootPath, entity.Image.TrimStart('/'));
@@ -142,7 +147,7 @@ namespace WebHalk.Controllers
 
             entity.Name = model.Name;
 
-            _hulkDbContext.SaveChanges();
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -150,28 +155,27 @@ namespace WebHalk.Controllers
         [HttpPost]
         public IActionResult Delete(CategoryDeleteViewModel model)
         {
-            var entity = _hulkDbContext.Categories.Find(model.Id);
+            var entity = _context.Categories.Find(model.Id);
             if (entity == null)
             {
                 return NotFound();
             }
 
-            // Видаляємо файл зображення
             var imagePath = Path.Combine(_env.WebRootPath, entity.Image.TrimStart('/'));
             if (System.IO.File.Exists(imagePath))
             {
                 System.IO.File.Delete(imagePath);
             }
 
-            _hulkDbContext.Categories.Remove(entity);
-            _hulkDbContext.SaveChanges();
+            _context.Categories.Remove(entity);
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> CategoryProducts(int id)
         {
-            var category = await _hulkDbContext.Categories
+            var category = await _context.Categories
                 .Include(c => c.Products)
                     .ThenInclude(p => p.ProductPhotos)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -181,16 +185,91 @@ namespace WebHalk.Controllers
                 return NotFound();
             }
 
-            // Перевіряємо, чи дійсно завантажуються продукти
             if (category.Products == null || !category.Products.Any())
             {
-                // Лог або точка зупину для відладки
                 Console.WriteLine("No products found for this category.");
             }
 
             return View(category);
         }
 
+        [HttpGet]
+        public IActionResult CreateProduct(int categoryId)
+        {
+            var model = new ProductCreateViewModel
+            {
+                CategoryId = categoryId
+            };
+            return View(model);
+        }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateProduct(ProductCreateViewModel model)
+        {
+            _logger.LogInformation("CreateProduct method is called.");
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _logger.LogInformation("ModelState is valid. Proceeding with product creation.");
+
+                    var product = new ProductEntity
+                    {
+                        Name = model.Name,
+                        CategoryId = model.CategoryId
+                    };
+
+                    _context.Products.Add(product);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("Product added with ID: {0}", product.Id);
+
+                    if (model.ImageFiles != null && model.ImageFiles.Any())
+                    {
+                        foreach (var file in model.ImageFiles)
+                        {
+                            var fileName = Path.GetFileName(file.FileName);
+                            var filePath = Path.Combine(_env.WebRootPath, "uploads", fileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(stream);
+                            }
+
+                            _context.ProductPhotos.Add(new ProductPhotoEntity
+                            {
+                                ImageUrl = "/uploads/" + fileName,
+                                ProductId = product.Id
+                            });
+
+                            _logger.LogInformation("Image file added: {0}", fileName);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("Product creation completed.");
+
+                    return RedirectToAction("CategoryProducts", new { id = model.CategoryId });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("An error occurred while creating the product: {0}", ex.Message);
+                    _logger.LogError("Stack Trace: {0}", ex.StackTrace);
+                    ModelState.AddModelError("", "An error occurred while creating the product. Please try again.");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("ModelState is invalid. Product creation failed.");
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    _logger.LogError("Validation error: {0}", error.ErrorMessage);
+                }
+            }
+
+            return View(model);
+        }
     }
 }

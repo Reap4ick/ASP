@@ -4,16 +4,36 @@
     <h1 class="text-center">@Model.Name</h1>
 
     <div class="row">
+        <div class="col-md-12 text-left mb-3">
+            <a asp-action="CreateProduct" asp-route-categoryId="@Model.Id" class="btn btn-primary">Add Product</a>
+        </div>
+    </div>
+
+    <div class="row">
         @if (Model.Products != null && Model.Products.Any())
         {
             @foreach (var product in Model.Products)
             {
                 <div class="col-md-4">
                     <div class="card mb-4">
-                        @if (product.ProductPhotos.Any())
-                        {
-                            <img src="@product.ProductPhotos.First().ImageUrl" class="card-img-top" alt="@product.Name" />
-                        }
+                        <div class="position-relative product-card-@product.Id">
+                            @for (int i = 0; i < product.ProductPhotos.Count(); i++)
+                            {
+                                var photo = product.ProductPhotos.ElementAt(i);
+                                <img src="@photo.ImageUrl" class="card-img-top product-image @(i == 0 ? "active" : "d-none")" alt="@product.Name" />
+                            }
+
+                            @if (product.ProductPhotos.Count() > 1)
+                            {
+                                <a class="carousel-control-prev" href="#" role="button" onclick="prevImage(@product.Id)">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                </a>
+                                <a class="carousel-control-next" href="#" role="button" onclick="nextImage(@product.Id)">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                </a>
+                            }
+                        </div>
+
                         <div class="card-body">
                             <h5 class="card-title">@product.Name</h5>
                         </div>
@@ -27,3 +47,77 @@
         }
     </div>
 </div>
+
+<script>
+    function prevImage(productId) {
+        const images = document.querySelectorAll(`.product-card-${productId} .product-image`);
+        let activeIndex = -1;
+
+        images.forEach((image, index) => {
+            if (image.classList.contains('active')) {
+                activeIndex = index;
+                image.classList.remove('active');
+                image.classList.add('d-none');
+            }
+        });
+
+        let newIndex = (activeIndex === 0) ? images.length - 1 : activeIndex - 1;
+        images[newIndex].classList.remove('d-none');
+        images[newIndex].classList.add('active');
+    }
+
+    function nextImage(productId) {
+        const images = document.querySelectorAll(`.product-card-${productId} .product-image`);
+        let activeIndex = -1;
+
+        images.forEach((image, index) => {
+            if (image.classList.contains('active')) {
+                activeIndex = index;
+                image.classList.remove('active');
+                image.classList.add('d-none');
+            }
+        });
+
+        let newIndex = (activeIndex === images.length - 1) ? 0 : activeIndex + 1;
+        images[newIndex].classList.remove('d-none');
+        images[newIndex].classList.add('active');
+    }
+</script>
+
+<style>
+    .carousel-control-prev, .carousel-control-next {
+        position: absolute;
+        top: 50%;
+        width: 30px;
+        height: 30px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+    }
+
+    .carousel-control-prev {
+        left: 10px;
+        transform: translateY(-50%);
+    }
+
+    .carousel-control-next {
+        right: 10px;
+        transform: translateY(-50%);
+    }
+
+    .product-image {
+        transition: opacity 0.5s ease;
+    }
+
+        .product-image.active {
+            opacity: 1;
+        }
+
+        .product-image.d-none {
+            opacity: 0;
+        }
+</style>
