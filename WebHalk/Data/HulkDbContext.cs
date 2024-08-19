@@ -19,13 +19,11 @@ namespace WebHalk.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Налаштовуємо зв'язок між категоріями та продуктами
             modelBuilder.Entity<CategoryEntity>()
                 .HasMany(c => c.Products)
                 .WithOne(p => p.Category)
                 .HasForeignKey(p => p.CategoryId);
 
-            // Налаштовуємо зв'язок між продуктами та фотографіями
             modelBuilder.Entity<ProductEntity>()
                 .HasMany(p => p.ProductPhotos)
                 .WithOne(pp => pp.Product)
